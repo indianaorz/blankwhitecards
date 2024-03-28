@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Blank White Cards</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+    <input type="text" v-model="apiUrl" placeholder="Enter API URL">
+    <button @click="connect">Connect</button>
+    <div class="card" @mousedown="dragStart"></div>
+</div>
+
+<script src="vue.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
