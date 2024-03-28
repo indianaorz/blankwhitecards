@@ -1,12 +1,13 @@
 new Vue({
     el: '#app',
     data: {
-        apiUrl: '',
+        apiUrl: 'ws://localhost:6789', // Default WebSocket server URL
         ws: null,
+        cards: {}, // Object to store the state of multiple cards
         dragging: false,
         cardPosition: { x: 0, y: 0 },
         offset: { x: 0, y: 0 },
-        cardId: 'card1', // Assuming each card has a unique ID
+        dragCardId: null, // Store the ID of the card being dragged
     },
     methods: {
         connect() {
@@ -22,41 +23,61 @@ new Vue({
         },
         onMessage(event) {
             const message = JSON.parse(event.data);
-            // Update card position based on message
-            if (message.cardId === this.cardId && !this.dragging) {
-                const card = this.$el.querySelector('.card');
-                card.style.left = `${message.x}px`;
-                card.style.top = `${message.y}px`;
+            if (message.type === 'init') {
+                this.cards = message.state.cards;
+            } else if (message.type === 'update') {
+                this.$set(this.cards, message.cardId, { x: message.x, y: message.y });
+            } else if (message.type === 'newCard') {
+                this.$set(this.cards, message.cardId, { x: message.x, y: message.y });
+                this.creatingCard = false; // Disable creation mode after placing a new card
             }
         },
-        dragStart(event) {
+        createCard() {
+            this.creatingCard = !this.creatingCard; // Toggle card creation mode
+        },
+        gameAreaClick(event) {
+            if (this.creatingCard) {
+                const x = event.clientX;
+                const y = event.clientY;
+                this.send({ action: 'createCard', x: x, y: y }); // Request to create a new card at x, y
+            }
+        },
+        dragStart(event, cardId) {
             this.dragging = true;
-            const card = event.target;
-            this.offset.x = event.clientX - card.getBoundingClientRect().left;
-            this.offset.y = event.clientY - card.getBoundingClientRect().top;
+            this.dragCardId = cardId;
+            const cardElement = this.$el.querySelector(`.card[data-card-id="${cardId}"]`);
+            this.offset.x = event.clientX - cardElement.getBoundingClientRect().left;
+            this.offset.y = event.clientY - cardElement.getBoundingClientRect().top;
             document.addEventListener('mousemove', this.dragMove);
             document.addEventListener('mouseup', this.dragEnd);
-            // Send message that this client has picked up the card
-            this.send({ action: 'pickup', cardId: this.cardId });
+            // Send message to the server
+            this.send({ action: 'pickup', cardId: this.dragCardId });
         },
         dragMove(event) {
-            if (!this.dragging) return;
+            if (!this.dragging || !this.dragCardId) return;
             const x = event.clientX - this.offset.x;
             const y = event.clientY - this.offset.y;
-            this.cardPosition.x = x;
-            this.cardPosition.y = y;
-            const card = this.$el.querySelector('.card');
-            card.style.left = `${x}px`;
-            card.style.top = `${y}px`;
-            // Send card position update
-            this.send({ action: 'move', cardId: this.cardId, x, y });
+            // Update the position directly for smooth dragging
+            const cardElement = this.$el.querySelector(`.card[data-card-id="${this.dragCardId}"]`);
+            if (cardElement) {
+                cardElement.style.left = `${x}px`;
+                cardElement.style.top = `${y}px`;
+            }
+            this.send({ action: 'move', cardId: this.dragCardId, x, y });
         },
+
         dragEnd() {
             this.dragging = false;
             document.removeEventListener('mousemove', this.dragMove);
             document.removeEventListener('mouseup', this.dragEnd);
-            // Send message that this client has dropped the card
-            this.send({ action: 'drop', cardId: this.cardId, x: this.cardPosition.x, y: this.cardPosition.y });
-        }
+            if (this.dragCardId) {
+                const cardElement = this.$el.querySelector(`.card[data-card-id="${this.dragCardId}"]`);
+                const x = parseFloat(cardElement.style.left);
+                const y = parseFloat(cardElement.style.top);
+                // Notify the server of the card drop and its final position
+                this.send({ action: 'drop', cardId: this.dragCardId, x: x, y: y });
+                this.dragCardId = null;
+            }
+        },
     }
 });

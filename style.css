@@ -1,13 +1,20 @@
+
 #app {
     position: relative;
-    height: 100vh; /* Full viewport height */
+    height: 100vh; /* Adjust as needed */
+    width: 100vw; /* Adjust as needed */
+    background-color: #f0f0f0; /* Example background */
 }
 .card {
     position: absolute;
-    width: 100px;
-    height: 150px;
+    width: 100px; /* Adjust card size as needed */
+    height: 150px; /* Adjust card size as needed */
     background-color: white;
     border-radius: 10px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+.card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
