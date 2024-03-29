@@ -27,9 +27,10 @@
         <div id="hand-container">
             <div v-for="(card, cardId) in hand" :key="cardId" class="card in-hand"
                 @mousedown="selectCardFromHand(cardId, $event)">
+                <img :src="card.imageData ? `data:image/png;base64,${card.imageData}` : ''" alt="Card Image"
+                    class="card-image">
             </div>
         </div>
-
 
     </div>
 

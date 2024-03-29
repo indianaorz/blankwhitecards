@@ -50,6 +50,10 @@ new Vue({
             if (message.type === 'drawCards') {
                 // Store drawn cards in the hand
                 this.hand = message.cards;
+                // Request the image data for each card in the hand
+                for (const cardId in this.hand) {
+                    this.requestCardImage(cardId);
+                }
             }
             else if (message.type === 'init') {
                 this.cards = message.state.cards;
@@ -57,8 +61,42 @@ new Vue({
                 this.$set(this.cards, message.cardId, { x: message.x, y: message.y });
             } else if (message.type === 'newCard') {
                 this.$set(this.cards, message.cardId, { x: message.x, y: message.y });
-                this.creatingCard = false; // Disable creation mode after placing a new card
+
+                this.$forceUpdate();
+                this.$nextTick(() => {
+                    // Display the card image
+                    const cardElement = this.$el.querySelector(`.card[data-card-id="${message.cardId}"]`);
+                    if (cardElement && message.imageData) {
+                        cardElement.style.backgroundImage = `url(data:image/png;base64,${message.imageData})`;
+                        cardElement.style.backgroundSize = 'cover';
+                        // Update the card position
+                        cardElement.style.left = `${message.x}px`;
+                        cardElement.style.top = `${message.y}px`;
+                    }
+                });
             }
+            else if (message.type === 'cardImage') {
+                const cardId = message.cardId;
+                const imageData = message.imageData;
+                if (imageData) {
+                    // Check if the card is in the hand
+                    if (this.hand[cardId]) {
+                        this.$set(this.hand, cardId, { ...this.hand[cardId], imageData: imageData });
+                    }
+                    // Check if the card is on the field
+                    if (this.cards[cardId]) {
+                        const cardElement = this.$el.querySelector(`.card[data-card-id="${cardId}"]`);
+                        if (cardElement) {
+                            cardElement.style.backgroundImage = `url(data:image/png;base64,${imageData})`;
+                            cardElement.style.backgroundSize = 'cover';
+                        }
+                    }
+                }
+            }
+            this.$forceUpdate();
+        },
+        requestCardImage(cardId) {
+            this.send({ action: 'getCardImage', cardId: cardId });
         },
         createCard() {
             this.creatingCard = !this.creatingCard; // Toggle card creation mode
@@ -71,9 +109,9 @@ new Vue({
             }
         },
         drawCards() {
-            this.send({ action: 'draw' });  // Request to draw 4 cards
+            this.send({ action: 'draw', prompt: this.imagePrompt });  // Request to draw 4 cards
         },
-        selectCardFromHand(cardId) {
+        selectCardFromHand(cardId, event) {
             const selectedCard = this.hand[cardId];
             // Remove the selected card from the hand
             // delete this.hand[cardId];
@@ -95,8 +133,12 @@ new Vue({
                 y: initialY
             });
 
+
             // Update local state to include this card (the server will also broadcast this, but this is for immediate feedback)
             this.cards[cardId] = { ...selectedCard, x: initialX, y: initialY };
+
+            // Request the card image data from the server
+            this.requestCardImage(cardId);
 
             this.$nextTick(() => {
                 this.$forceUpdate();
