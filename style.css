@@ -1,20 +1,56 @@
-
 #app {
     position: relative;
-    height: 100vh; /* Adjust as needed */
-    width: 100vw; /* Adjust as needed */
-    background-color: #f0f0f0; /* Example background */
+    height: 100vh;
+    width: 100vw;
 }
+
+html{
+    background-color: #333; /* Dark background */
+}
+
+#app.grabbing {
+    cursor: grabbing; /* Cursor while dragging */
+}
+
 .card {
     position: absolute;
-    width: 100px; /* Adjust card size as needed */
-    height: 150px; /* Adjust card size as needed */
+    width: 100px;
+    height: 150px;
     background-color: white;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: box-shadow 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer; /* Cursor for clickable cards */
+    transition: transform 0.2s; /* Smooth transition for zoom */
 }
+
 .card:hover {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card:active {
+    cursor: grabbing; /* Cursor when a card is being dragged */
+}
+
+.card.in-hand {
+    position: relative;
+    bottom: 0;
+    transform: scale(1);
+    transition: transform 0.2s ease;
+}
+
+.card.in-hand:hover {
+    transform: scale(1.1);
+}
+
+#hand-container {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
+    width: 50%;
+    height: 120px;
 }
